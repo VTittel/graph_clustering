@@ -22,13 +22,13 @@ nodes = pd.read_csv('graph/nodes.csv', sep=',', header=None)
 edges = pd.read_csv('graph/edges.csv', sep=',', header=None)
 start = time.time()
 
+# Sample nodes and save to new dataframe
 sampled_nodes = nodes.sample(frac=0.01, replace=True, random_state=1)
 
 # List of nodes we have sampled
 nodes_list = list(sampled_nodes[0])
 
-print(len(nodes_list))
-
+# For each samples nodes, only keep edges from that node
 new_edges = edges.loc[edges.index.isin(nodes_list)]
 
 new_edges.reset_index(inplace=True)
@@ -37,6 +37,7 @@ new_edges.reset_index(inplace=True)
 #with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
 #    print(test)
 
+# Create a networkx graph
 for i in range(2, len(new_edges.index)):
     fromNode = new_edges[1][i]
     toNode = new_edges[2][i]
@@ -48,13 +49,11 @@ for i in range(2, len(new_edges.index)):
 end = time.time()
 print("Time to store graph :" + " " + str(end - start) + " seconds")
 
+# Export graph
 nx.write_gml(G, "test.gml")
 
 
-Gp = maximum_independent_set(G)
-
-
-print(Gp)
+#Gp = maximum_independent_set(G)
 
 # Memory maps to store distance arrays for users and repositories on disk
 # repoDistance = np.memmap('repo_distance.dat', dtype='int', mode='w+', shape=(124409,124409))
