@@ -2,31 +2,25 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import networkx as nx
-from networkx.algorithms.approximation import maximum_independent_set
 from sklearn import cluster
 from scipy.sparse import csr_matrix
 from sklearn.cluster import MiniBatchKMeans
-import matplotlib.pyplot as plt
 import math
 import time
 
-# Should probably get this from csv and not hardcoded
-numRepos = 124409
-numUsers = 23755
-numNodes = 148164
-
 # Initialise graph
-G = nx.Graph()
+G = nx.DiGraph()
 
 nodes = pd.read_csv('graph/nodes.csv', sep=',', header=None)
 edges = pd.read_csv('graph/edges.csv', sep=',', header=None)
 start = time.time()
 
 # Sample nodes and save to new dataframe
-sampled_nodes = nodes.sample(frac=0.01, replace=True, random_state=1)
+sampled_nodes = nodes.sample(frac=0.05, replace=True, random_state=1)
 
 # List of nodes we have sampled
 nodes_list = list(sampled_nodes[0])
+print("Number of sampled nodes : " + str(len(nodes_list)))
 
 # For each samples nodes, only keep edges from that node
 new_edges = edges.loc[edges.index.isin(nodes_list)]
@@ -52,61 +46,31 @@ print("Time to store graph :" + " " + str(end - start) + " seconds")
 # Export graph
 nx.write_gml(G, "test.gml")
 
+# Compute the largest connected graph
+#Gp = nx.maximal_independent_set(G)
 
-#Gp = maximum_independent_set(G)
+# Create an adjacency dictionary and populate it
+graphDict = defaultdict(dict)
 
-# Memory maps to store distance arrays for users and repositories on disk
-# repoDistance = np.memmap('repo_distance.dat', dtype='int', mode='w+', shape=(124409,124409))
-# userDistance = np.memmap('user_distance.dat', dtype='int', mode='w+', shape=(numUsers,numUsers))
-#graphMatrix = np.memmap('nodes.dat', dtype='int', mode='w+', shape=(numNodes, numNodes))
-
-"""
 for node in G:
-    if type(node) == float or type(node) == int:
-        if math.isnan(node):
-            continue
-
     for neighbor in G.neighbors(node):
-
-        if neighbor == 'nan':
-            continue
-
-        if type(neighbor) == float:
-            if math.isnan(neighbor):
-                continue
-
-        print("Node type : " + str(type(node)))
-        print(node)
-
         weight = int(G.get_edge_data(node, neighbor).get('weight'))
-        node2 = int(node)
-        neighbor2 = 0
+        graphDict[node][neighbor] = weight
 
-        if (not math.isnan(node2)) and (not math.isnan(neighbor2)):
-            graphMatrix[node2][neighbor2] = weight
-
-    graphMatrix[int(node)][int(node)] = 1
-
-"""
-
-"""
-start = time.time()
-
-sparse = csr_matrix(graphMatrix)
-
-end = time.time()
-print("Time to convert matrix to CSR :" + " " + str(end - start) + " seconds")
-
-#algo = MiniBatchKMeans(init='k-means++', n_clusters=10, batch_size=50000,
- #                      max_no_improvement=10, verbose=0)
+df = pd.DataFrame.from_dict(graphDict)
+df.fillna(0, inplace=True)
 
 # Affinity is euclidean by default
-algo = cluster.KMeans(n_clusters=5, n_init=50)
+algo = cluster.KMeans(n_clusters=10, n_init=50)
 
 start = time.time()
-algo.fit(sparse)
+algo.fit(df)
 end = time.time()
 print("Time to cluster :" + " " + str(end - start) + " seconds")
 
-print(list(algo.labels_))
-"""
+labels = np.array(algo.labels_)
+
+# Print label counts
+unique_elements, counts_elements = np.unique(labels, return_counts=True)
+print("Frequency of unique values of the said array:")
+print(np.asarray((unique_elements, counts_elements)))
