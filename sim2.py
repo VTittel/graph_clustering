@@ -3,17 +3,18 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from sklearn import cluster
+from sklearn_extensions.fuzzy_kmeans import FuzzyKMeans
 import time
 
 # Initialise graph
-G = nx.Graph()
+G = nx.DiGraph()
 
 nodes = pd.read_csv('graph/nodes.csv', sep=',', header=None)
 edges = pd.read_csv('graph/edges.csv', sep=',', header=None)
 start = time.time()
 
 # Sample nodes and save to new dataframe
-sampled_nodes = nodes.sample(frac=0.001, replace=True, random_state=1)
+sampled_nodes = nodes.sample(frac=0.01, replace=True, random_state=1)
 
 # List of nodes we have sampled
 nodes_list = list(sampled_nodes[0])
@@ -55,7 +56,7 @@ df.fillna(0, inplace=True)
 df = df.T
 
 # Affinity is euclidean by default
-algo = cluster.KMeans(n_clusters=10)
+algo = FuzzyKMeans(k=4)
 
 start = time.time()
 algo.fit(df)
