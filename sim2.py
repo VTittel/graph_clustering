@@ -6,14 +6,14 @@ from sklearn import cluster
 import time
 
 # Initialise graph
-G = nx.DiGraph()
+G = nx.Graph()
 
 nodes = pd.read_csv('graph/nodes.csv', sep=',', header=None)
 edges = pd.read_csv('graph/edges.csv', sep=',', header=None)
 start = time.time()
 
 # Sample nodes and save to new dataframe
-sampled_nodes = nodes.sample(frac=0.05, replace=True, random_state=1)
+sampled_nodes = nodes.sample(frac=0.001, replace=True, random_state=1)
 
 # List of nodes we have sampled
 nodes_list = list(sampled_nodes[0])
@@ -29,19 +29,14 @@ new_edges.reset_index(inplace=True)
 #    print(test)
 
 # Create a networkx graph
-for i in range(2, len(new_edges.index)):
+for i in range(0, len(new_edges.index)):
     fromNode = new_edges[1][i]
     toNode = new_edges[2][i]
     edgeWeight = new_edges[4][i]
-
-    #if ((not fromNode == "") and (not toNode == "") and (not edgeWeight == "")):
     G.add_edge(fromNode, toNode, weight=edgeWeight)
 
 end = time.time()
 print("Time to store graph :" + " " + str(end - start) + " seconds")
-
-# Export graph
-nx.write_gml(G, "test.gml")
 
 # Compute the largest connected graph
 #Gp = nx.maximal_independent_set(G)
@@ -56,18 +51,29 @@ for node in G:
 
 df = pd.DataFrame.from_dict(graphDict)
 df.fillna(0, inplace=True)
+# Transpose the dataframe
+df = df.T
 
 # Affinity is euclidean by default
-algo = cluster.KMeans(n_clusters=10, n_init=50)
+algo = cluster.KMeans(n_clusters=10)
 
 start = time.time()
 algo.fit(df)
 end = time.time()
 print("Time to cluster :" + " " + str(end - start) + " seconds")
 
-labels = np.array(algo.labels_)
+labels_array = np.array(algo.labels_)
 
 # Print label counts
-unique_elements, counts_elements = np.unique(labels, return_counts=True)
+unique_elements, counts_elements = np.unique(labels_array, return_counts=True)
 print("Frequency of unique values of the said array:")
 print(np.asarray((unique_elements, counts_elements)))
+
+# Assign each node a label
+labelDict = {}
+for node, label in zip(G, labels_array):
+    labelDict[node] = str(label)
+
+# Add labels as attributes to nodes of G, and Export graph
+nx.set_node_attributes(G, labelDict, "labels")
+nx.write_gml(G, "test.gml")
