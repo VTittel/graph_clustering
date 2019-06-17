@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from sklearn import cluster
-from scipy.sparse import csr_matrix
-from sklearn.cluster import MiniBatchKMeans
-import math
 import time
 
 # Initialise graph
