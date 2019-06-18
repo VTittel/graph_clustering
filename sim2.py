@@ -7,22 +7,21 @@ from sklearn_extensions.fuzzy_kmeans import FuzzyKMeans
 import time
 
 # Initialise graph
-G = nx.DiGraph()
+G = nx.Graph()
 
 nodes = pd.read_csv('graph/nodes.csv', sep=',', header=None)
 edges = pd.read_csv('graph/edges.csv', sep=',', header=None)
 start = time.time()
 
 # Sample nodes and save to new dataframe
-sampled_nodes = nodes.sample(frac=0.01, replace=True, random_state=1)
+sampled_nodes = nodes.sample(frac=0.03, replace=True, random_state=1)
 
 # List of nodes we have sampled
 nodes_list = list(sampled_nodes[0])
 print("Number of sampled nodes : " + str(len(nodes_list)))
 
 # For each samples nodes, only keep edges from that node
-new_edges = edges.loc[edges.index.isin(nodes_list)]
-
+new_edges = edges.loc[edges[1].isin(nodes_list)]
 new_edges.reset_index(inplace=True)
 
 # Printing data frame
@@ -43,20 +42,11 @@ print("Time to store graph :" + " " + str(end - start) + " seconds")
 #Gp = nx.maximal_independent_set(G)
 
 # Create an adjacency dictionary and populate it
-graphDict = defaultdict(dict)
-
-for node in G:
-    for neighbor in G.neighbors(node):
-        weight = int(G.get_edge_data(node, neighbor).get('weight'))
-        graphDict[node][neighbor] = weight
-
-df = pd.DataFrame.from_dict(graphDict)
-df.fillna(0, inplace=True)
-# Transpose the dataframe
-df = df.T
+adj_mat = nx.to_numpy_matrix(G)
+df = pd.DataFrame(adj_mat)
 
 # Affinity is euclidean by default
-algo = FuzzyKMeans(k=4)
+algo = FuzzyKMeans(k=6, m=2)
 
 start = time.time()
 algo.fit(df)
